@@ -7,7 +7,7 @@ Important files for the robotic prosthesis hand project
 Assemble following the image:
 
 <img src="https://github.com/user-attachments/assets/cc970b68-e54f-47c8-92f3-b53f8dc8a22a" />
-
+<img width="300" height="300" src="https://github.com/user-attachments/assets/1d8b73cf-1ce9-4f70-b6fc-608b6224c5ff" />
 
 
 ## WARNING: ASSEMBLY
@@ -17,6 +17,7 @@ Assemble following the image:
 - The exact position of wires is not that relevant
 - The power wires for servos are put in the other side of the breadboard for clarity, but you can put them on the other side too
 - **There might be mistakes in the diagram**, use your knowledge to assess before powering on
+
 
 
 ## BLE HC-08
