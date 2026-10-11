@@ -52,7 +52,6 @@ if(SERVO_SPEED>5 || SERVO_SPEED<1)
   pinMode(BLE_TX,OUTPUT);
 #endif
   pinMode(LED_BUILTIN,OUTPUT);
- // pinMode(ANALOG_IN, INPUT);
   Serial.println("....");
 
 
@@ -82,27 +81,18 @@ if(SERVO_SPEED>5 || SERVO_SPEED<1)
 
 
 String response="", chitchat;
-const unsigned long servo_timer=7-SERVO_SPEED%5, led_timer=150;
-unsigned long led_before=0, servo_before=0;
-
-//uint16_t analog_read=0;   //value in Volts
+const unsigned long servo_timer=7-SERVO_SPEED%5, led_timer=150,servo_stop=10000;
+unsigned long led_before=0, servo_before=0, servo_cooldown=0;
+bool servo_done=false;
 
 
 
 //USING MILLIS INSTEAD OF DELAY TO MAKE IT NON BLOCKING
 void loop() 
 {
-//----------------------SIGNAL PROCESSING--------------------------------
-
- // analog_read=analogRead(ANALOG_IN)*5/1023; //1023 reading represents 5V
-
-//----------------------END OF SIGNAL PROCESSING-------------------------
-
-
-
 
 //----------------------BLUETOOTH SETUP--------------------------------
-
+//Uncomment when needing to change HC-08 settings
 /*
   if(Serial.available()) 
   {
@@ -118,46 +108,53 @@ void loop()
 
 //----------------------SERVOS MOVEMENT--------------------------------
 
-
-
   if(millis()-servo_before>=servo_timer)
   {
-    if(ble.available())          //Read from HC
+    if(ble.available())                     //Read from HC
     {
       response=ble.readString();
       Serial.println(response);
     }
 
-      if(response[0]=='A')   //ROCK-N-ROLL
+      switch(response[0])
       {
-        change_finger_step(1,fing1);
-        change_finger_step(0,fing2);
-        change_finger_step(0,fing3);
-        change_finger_step(1,fing4);
-        Serial.println("ROCK N ROLL");
-      }
-      else if(response[0]=='B')
-      {
-        change_finger_step(0,fing1);
-        change_finger_step(1,fing2);
-        change_finger_step(1,fing3);
-        change_finger_step(0,fing4);
-        Serial.println("NOT ROCK");
+        case 'A':
+          set_hand_gesture_step(1,0,0,1);   //rock n roll
+        break;
+        case 'B':
+          set_hand_gesture_step(0,1,1,0);   //anti rock
+        break;
+        case 'C':
+          set_hand_gesture_step(0,1,0,0);   //fuck u
+        break;
+        case 'D':
+          set_hand_gesture_step(0,0,0,1);   //surf
+        break;
+        case 'E':
+          set_hand_gesture_step(0,0,0,0);   //fist
+        break;
 
+        //Add more hand
+        //gestures here...
+
+        default:
+          set_hand_gesture_step(1,1,1,1);   //relaxed
+          response="";
+        break;
+      }
       
       servo_before=millis();
+
+      if(servo_done && millis()-servo_cooldown>=servo_stop)
+      {
+          set_hand_gesture_step(1,1,1,1);   //relaxed
+          servo_done=false;
+      }
     }
 
-  }
-/*
-Serial.println("S1:");
-Serial.print(fing1.read());
-Serial.print("  S2:");
-Serial.print(fing2.read());
-Serial.print("  S3:");
-Serial.print(fing3.read());
-Serial.println("");
-*/
+  
+
+
 //----------------------END OF SERVOS MOVEMENT-------------------------
 
 
@@ -183,59 +180,38 @@ Serial.println("");
 //--------------------------------------------------------------------------------------------------
 
 
-//LOWER VALUE OF SERVO MEANS NERVE IS "ACTIVATED", GREATER MEANS NERVE IS "RELAXED" - BLOCKING FUNCTION [[DEPRECATED]]
-/*
-uint8_t change_finger(bool extend, Servo finger)
-{
-
-  Serial.print("  Flex:");
-  Serial.println(finger.read());
-
-   if(extend)
-  {
-    while(finger.read() < SERVO_MAX)
-    {
-      finger.write(finger.read()+1);
-      delay(1);
-    }
-  }
-  else
-  { 
-    while(finger.read() > SERVO_MIN)
-    {
-      finger.write(finger.read()-1);
-      delay(1);
-    }
-  }
-
-  
-  //finger.write(extend?SERVO_MAX-1:SERVO_MIN+1);
-return 0;
-}*/
-
-
-
 //LOWER VALUE OF SERVO MEANS NERVE IS "ACTIVATED", GREATER MEANS NERVE IS "RELAXED" - NONBLOCKING FUNCTION
 /*
+* @brief                Change angle of the servo, without getting out of range, by one step
 * @param    extend :    0 for contracting the finger, 1 for extending it
 * @param    finger :    Servo structure
 */
 void change_finger_step(bool extend, Servo finger)
 {
   if(extend && finger.read() < SERVO_MAX)
-  {
     finger.write(finger.read()+1);    
-  }
   else if(!extend && finger.read() > SERVO_MIN)
-  { 
     finger.write(finger.read()-1);
-  }
   else
-    return;
+  {
+    servo_done=true;
+    servo_cooldown=millis();
+  }
 }
 
 
-
+//FINGERS FROM 1 TO 4, FROM INDEX TO PINKY
+/*
+* @brief                Set all fingers for the hand, by one step
+* @param    f1,f2...:   Bool value; 0 for contracted, 1 for extended
+*/
+void set_hand_gesture_step(bool f1, bool f2, bool f3 , bool f4)
+{
+  change_finger_step(f1,fing1);
+  change_finger_step(f2,fing2);
+  change_finger_step(f3,fing3);
+  change_finger_step(f4,fing4);
+}
 
 
 
