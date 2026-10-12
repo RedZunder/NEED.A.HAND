@@ -81,7 +81,7 @@ if(SERVO_SPEED>5 || SERVO_SPEED<1)
 
 
 String response="", chitchat;
-const unsigned long servo_timer=7-SERVO_SPEED%5, led_timer=150,servo_stop=10000;
+const unsigned long servo_timer=7-SERVO_SPEED%5, led_timer=150,servo_stop_timer=10000;
 unsigned long led_before=0, servo_before=0, servo_cooldown=0;
 bool servo_done=false;
 
@@ -145,11 +145,11 @@ void loop()
       
       servo_before=millis();
 
-      if(servo_done && millis()-servo_cooldown>=servo_stop)
+      if(servo_done && millis()-servo_cooldown>=servo_stop_timer)
       {
-          set_hand_gesture_step(1,1,1,1);   //relaxed
-          servo_done=false;
+          reset_hand_blocking();     //relaxed
       }
+
     }
 
   
@@ -157,7 +157,7 @@ void loop()
 
 //----------------------END OF SERVOS MOVEMENT-------------------------
 
-
+//Debug LED
   if(millis()-led_before>=led_timer)
   {
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
@@ -192,11 +192,12 @@ void change_finger_step(bool extend, Servo finger)
     finger.write(finger.read()+1);    
   else if(!extend && finger.read() > SERVO_MIN)
     finger.write(finger.read()-1);
-  else
+  else if(!servo_done)
   {
     servo_done=true;
     servo_cooldown=millis();
   }
+  else return;
 }
 
 
@@ -214,4 +215,17 @@ void set_hand_gesture_step(bool f1, bool f2, bool f3 , bool f4)
 }
 
 
+void reset_hand_blocking()
+{
+  while(fing1.read()<SERVO_MAX||fing2.read()<SERVO_MAX||fing3.read()<SERVO_MAX||fing4.read()<SERVO_MAX)
+  {
+    fing1.write(fing1.read()+1<SERVO_MAX?fing1.read()+1:SERVO_MAX);
+    fing2.write(fing2.read()+1<SERVO_MAX?fing2.read()+1:SERVO_MAX);
+    fing3.write(fing3.read()+1<SERVO_MAX?fing3.read()+1:SERVO_MAX);
+    fing4.write(fing4.read()+1<SERVO_MAX?fing4.read()+1:SERVO_MAX);
+    delay(servo_timer);
+  }
+
+  servo_done=false;
+}
 
