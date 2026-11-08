@@ -14,8 +14,8 @@
 #define BAUD 115200  
 
 #define SERVO_1 8
-#define SERVO_2 9
-#define SERVO_3 10
+#define SERVO_2 10
+#define SERVO_3 9
 #define SERVO_4 11
 
 #ifdef USE_BLE
@@ -62,13 +62,9 @@ if(SERVO_SPEED>5 || SERVO_SPEED<1)
 
   delay(100);
 
-  fing1.write(2);
-  fing2.write(2);
-  fing3.write(2);
-  fing4.write(2);
+  reset_hand_blocking();
 
-
-  delay(2000);
+  delay(500);
   Serial.println("READY");
 
 }
@@ -81,7 +77,7 @@ if(SERVO_SPEED>5 || SERVO_SPEED<1)
 
 
 String response="", chitchat;
-const unsigned long servo_timer=7-SERVO_SPEED%5, led_timer=150,servo_stop_timer=10000;
+const unsigned long servo_timer=7-SERVO_SPEED%5, led_timer=150,servo_stop_timer=13000;
 unsigned long led_before=0, servo_before=0, servo_cooldown=0;
 bool servo_done=false;
 
@@ -195,7 +191,6 @@ void change_finger_step(bool extend, Servo finger)
   else if(!servo_done)
   {
     servo_done=true;
-    servo_cooldown=millis();
   }
   else return;
 }
@@ -214,6 +209,10 @@ void set_hand_gesture_step(bool f1, bool f2, bool f3 , bool f4)
   change_finger_step(f4,fing4);
 }
 
+/*
+* @brief                Set all servos of the hand to relaxed position cleanly. THIS IS A BLOCKING FUNCTION
+*
+*/
 
 void reset_hand_blocking()
 {
@@ -225,7 +224,7 @@ void reset_hand_blocking()
     fing4.write(fing4.read()+1<SERVO_MAX?fing4.read()+1:SERVO_MAX);
     delay(servo_timer);
   }
-
+  response="";
   servo_done=false;
 }
 
